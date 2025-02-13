@@ -12,7 +12,7 @@ Esta es una vista de la aplicación funcionando en el navegador
 
 He usado Claude 3.5 Sonnet. 
 
-Es una primera versión con la que voy a experimetar ahora en evolucionarla.
+Es una primera versión con la que voy a experimetar como evolucionarla.
 
 El prompt y la conversación mantenida con Claude esta en el [prompts.md](prompts.md)
 
