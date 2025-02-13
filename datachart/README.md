@@ -1,4 +1,4 @@
-# datachart
+# datachart.html
 
 El objetivo de esta app es tener una simple aplicación para el registro varios grupos de fecha/valor y generar una grafica con ellos para ver la evolución. 
 
