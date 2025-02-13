@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Datos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        input {
+            padding: 5px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        #chart-container {
+            margin: 20px 0;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Registro de Datos</h1>
+    
+    <div class="form-container">
+        <form id="data-form">
+            <div class="input-group">
+                <input type="date" id="date-input" required>
+                <input type="number" id="value-input" placeholder="Valor" step="any" required>
+                <button type="submit">Agregar</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Valor</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Configuración de la base de datos
+        const db = new Dexie('DataTrackerDB');
+        db.version(1).stores({
+            entries: '++id, date, value'
+        });
+
+        // Referencia al gráfico
+        let myChart;
+
+        // Función para actualizar el gráfico
+        async function updateChart() {
+            const data = await db.entries.toArray();
+            data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const chartData = {
+                labels: data.map(entry => entry.date),
+                datasets: [{
+                    label: 'Valores',
+                    data: data.map(entry => entry.value),
+                    borderColor: '#8884d8',
+                    tension: 0.1
+                }]
+            };
+
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            const ctx = document.getElementById('chart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Función para actualizar la tabla
+        async function updateTable() {
+            const data = await db.entries.toArray();
+            data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const tbody = document.querySelector('#data-table tbody');
+            tbody.innerHTML = '';
+            
+            data.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.value}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Manejador del formulario
+        document.getElementById('data-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const date = document.getElementById('date-input').value;
+            const value = parseFloat(document.getElementById('value-input').value);
+
+            await db.entries.add({
+                date: date,
+                value: value
+            });
+
+            document.getElementById('date-input').value = '';
+            document.getElementById('value-input').value = '';
+
+            await updateChart();
+            await updateTable();
+        });
+
+        // Cargar datos iniciales
+        window.addEventListener('load', async () => {
+            await updateChart();
+            await updateTable();
+        });
+    </script>
+</body>
+</html>
